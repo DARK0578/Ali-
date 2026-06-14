@@ -1296,72 +1296,145 @@
   }
 
   // ========================================
-  // 7. 地图模块
+  // 7. 地图模块 (使用 Canvas 自动生成路线图)
   // ========================================
   function renderMaps() {
-    const mapList = [
-      { id: 'overview', name: '阿里大环线总览图', file: 'ali-loop-overview.jpg', desc: '查看完整的阿里大环线路线规划' },
-      { id: 'kora', name: '冈仁波齐转山路线图', file: 'kailash-kora-map.jpg', desc: '转山三天路线、住宿点和关键位置' },
-      { id: 'day03', name: 'Day 3 拉萨—羊湖—日喀则', file: 'day03-lhasa-shigatse.jpg', desc: '羊湖路线、岗巴拉山口' },
-      { id: 'day05', name: 'Day 5 萨嘎—玛旁雍错—塔钦', file: 'day05-saga-darchen.jpg', desc: '玛旁雍错、拉昂错、冈仁波齐远眺点' },
-      { id: 'day07', name: 'Day 7 转山 D1', file: 'day07-kora-d1.jpg', desc: '塔钦→止热寺路线' },
-      { id: 'day08', name: 'Day 8 转山 D2（最艰难）', file: 'day08-kora-d2.jpg', desc: '卓玛拉山口路线' },
-      { id: 'day09', name: 'Day 9 转山 D3', file: 'day09-kora-d3.jpg', desc: '祖楚寺→塔钦路线' }
-    ];
-
-    let html = '<div class="maps-page"><h2 class="page-title">🗺️ 离线地图资料</h2>';
+    let html = '<div class="maps-page"><h2 class="page-title">🗺️ 路线地图</h2>';
 
     html += `
       <div class="maps-notice card-info">
         <p>📌 <strong>使用提示：</strong></p>
         <ul>
-          <li>地图为静态图片，适合弱网/离线环境</li>
-          <li>点击可放大查看，双指可缩放</li>
-          <li><strong>建议出发前长按保存到手机相册</strong></li>
-          <li>请配合下载高德/百度离线地图包使用</li>
+          <li>以下路线图为自动生成的示意图，展示每日节点和路线方向</li>
+          <li>点击可放大查看，长按可保存</li>
+          <li><strong>建议出发前截图保存到手机相册</strong></li>
+          <li>请同时下载高德/百度离线地图包配合使用</li>
+          <li>转山路线图来自知乎高清版本（已内置）</li>
         </ul>
       </div>
     `;
 
-    html += '<div class="maps-list">';
-
-    mapList.forEach(function(map) {
-      html += `
-        <div class="map-card" id="mapCard_${map.id}">
-          <h4>${map.name}</h4>
-          <p class="map-desc">${map.desc}</p>
-          <div class="map-img-container" id="mapImgContainer_${map.id}">
-            <img
-              src="maps/${map.file}"
-              alt="${map.name}"
-              class="map-img"
-              id="mapImg_${map.id}"
-              loading="lazy"
-              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-            >
-            <div class="map-placeholder" style="display:none;">
-              <span>🗺️</span>
-              <p>地图图片尚未添加</p>
-              <small>请将 ${map.file} 放入 maps/ 文件夹</small>
-            </div>
-          </div>
-          <button class="btn btn-sm btn-outline btn-view-map" data-map-id="${map.id}">🔍 查看大图</button>
+    // 1. 阿里大环线总览图（Canvas）
+    html += `
+      <div class="map-card" id="mapCard_overview">
+        <h4>🗺️ 阿里大环线总览图</h4>
+        <p class="map-desc">16天全程路线概览：拉萨 → 日喀则 → 萨嘎 → 塔钦 → 转山 → 札达 → 狮泉河 → 改则 → 措勤 → 班戈 → 拉萨</p>
+        <div class="map-img-container">
+          <canvas id="canvasOverview" class="map-canvas" style="width:100%;height:auto;"></canvas>
         </div>
-      `;
-    });
+        <button class="btn btn-sm btn-outline btn-view-canvas" data-canvas="canvasOverview">🔍 查看大图</button>
+      </div>
+    `;
 
-    html += '</div>';
+    // 2. 转山路线图（已有 jpg）
+    html += `
+      <div class="map-card" id="mapCard_kora">
+        <h4>🏔️ 冈仁波齐转山路线图</h4>
+        <p class="map-desc">外圈转山3天路线：塔钦 → 止热寺 → 卓玛拉山口(5630m) → 祖楚寺 → 塔钦，约52km</p>
+        <div class="map-img-container">
+          <img
+            src="maps/kailash-kora-map.jpg"
+            alt="冈仁波齐转山路线图"
+            class="map-img"
+            id="mapImg_kora"
+            loading="lazy"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+          >
+          <div class="map-placeholder" style="display:none;">
+            <span>🗺️</span>
+            <p>转山路线图加载失败</p>
+            <small>请将 kailash-kora-map.jpg 放入 maps/ 文件夹</small>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-outline btn-view-img" data-img="mapImg_kora">🔍 查看大图</button>
+      </div>
+    `;
+
+    // 3. Day1-3 拉萨 → 日喀则路线
+    html += `
+      <div class="map-card" id="mapCard_d03">
+        <h4>📍 Day 1-3 拉萨 → 羊湖 → 日喀则</h4>
+        <p class="map-desc">拉萨(3650m) → 岗巴拉山口(5039m) → 羊卓雍措 → 浪卡子 → 江孜 → 日喀则(3850m)，约360km</p>
+        <div class="map-img-container">
+          <canvas id="canvasD03" class="map-canvas" style="width:100%;height:auto;"></canvas>
+        </div>
+        <button class="btn btn-sm btn-outline btn-view-canvas" data-canvas="canvasD03">🔍 查看大图</button>
+      </div>
+    `;
+
+    // 4. Day 4-5 萨嘎 → 塔钦路线
+    html += `
+      <div class="map-card" id="mapCard_d05">
+        <h4>📍 Day 4-5 日喀则 → 萨嘎 → 玛旁雍错 → 塔钦</h4>
+        <p class="map-desc">日喀则 → 拉孜 → 萨嘎(4500m) → 仲巴 → 玛旁雍错 → 拉昂错 → 塔钦(4660m)，约950km</p>
+        <div class="map-img-container">
+          <canvas id="canvasD05" class="map-canvas" style="width:100%;height:auto;"></canvas>
+        </div>
+        <button class="btn btn-sm btn-outline btn-view-canvas" data-canvas="canvasD05">🔍 查看大图</button>
+      </div>
+    `;
+
+    // 5. Day 7 转山 D1 示意
+    html += `
+      <div class="map-card" id="mapCard_d07">
+        <h4>🥾 Day 7 转山 D1 路线示意</h4>
+        <p class="map-desc">塔钦 → 经幡广场 → 曲古寺 → 止热寺，约20km，6-8小时，海拔上升至5000m</p>
+        <div class="map-img-container">
+          <canvas id="canvasD07" class="map-canvas" style="width:100%;height:auto;"></canvas>
+        </div>
+        <button class="btn btn-sm btn-outline btn-view-canvas" data-canvas="canvasD07">🔍 查看大图</button>
+      </div>
+    `;
+
+    // 6. Day 8 转山 D2 示意（最难）
+    html += `
+      <div class="map-card" id="mapCard_d08">
+        <h4>⚠️ Day 8 转山 D2 路线示意（最艰难）</h4>
+        <p class="map-desc">止热寺(5000m) → 天葬台 → 卓玛拉山口(5630m) → 慈悲湖 → 祖楚寺(4800m)，约22km，8-10小时</p>
+        <div class="map-img-container">
+          <canvas id="canvasD08" class="map-canvas" style="width:100%;height:auto;"></canvas>
+        </div>
+        <button class="btn btn-sm btn-outline btn-view-canvas" data-canvas="canvasD08">🔍 查看大图</button>
+      </div>
+    `;
+
+    // 7. Day 9 转山 D3 示意
+    html += `
+      <div class="map-card" id="mapCard_d09">
+        <h4>🥾 Day 9 转山 D3 路线示意</h4>
+        <p class="map-desc">祖楚寺(4800m) → 宗堆 → 塔钦(4660m)，约10km，3-4小时，相对轻松</p>
+        <div class="map-img-container">
+          <canvas id="canvasD09" class="map-canvas" style="width:100%;height:auto;"></canvas>
+        </div>
+        <button class="btn btn-sm btn-outline btn-view-canvas" data-canvas="canvasD09">🔍 查看大图</button>
+      </div>
+    `;
+
+    // Day 10-15 北线示意
+    html += `
+      <div class="map-card" id="mapCard_d10">
+        <h4>📍 Day 10-15 札达 → 狮泉河 → 改则 → 措勤 → 班戈 → 拉萨（北线）</h4>
+        <p class="map-desc">札达土林 → 古格王朝 → 狮泉河 → 革吉 → 改则 → 措勤 → 尼玛 → 色林错 → 班戈 → 纳木错 → 那根拉山口(5190m) → 拉萨</p>
+        <div class="map-img-container">
+          <canvas id="canvasD10" class="map-canvas" style="width:100%;height:auto;"></canvas>
+        </div>
+        <button class="btn btn-sm btn-outline btn-view-canvas" data-canvas="canvasD10">🔍 查看大图</button>
+      </div>
+    `;
 
     // 应急截图
     html += `
       <div class="maps-emergency card-info">
-        <h3>🆘 应急信息截图</h3>
-        <p>建议出发前截图保存以下信息到手机相册：</p>
+        <h3>🆘 应急信息参考</h3>
+        <p>以下信息建议截图保存到手机相册：</p>
         <ul>
-          <li>沿途医院地址和电话</li>
-          <li>租车/保险公司电话</li>
-          <li>报警电话和报警信息模板</li>
-          <li>关键路线 GPS 坐标</li>
+          <li>报警电话：110 / 交警：122 / 急救：120</li>
+          <li>阿里地区公安处：0897-2822110</li>
+          <li>日喀则地区公安处：0892-8822241</li>
+          <li>拉萨市公安局：0891-6248110</li>
+          <li>阿里地区人民医院（狮泉河）：0897-2821462</li>
+          <li>日喀则市人民医院：0892-8822650</li>
+          <li>拉萨市人民医院：0891-6323228</li>
         </ul>
       </div>
     `;
@@ -1371,36 +1444,525 @@
   }
 
   function bindMapsEvents() {
-    // 查看大图（全屏预览）
-    document.querySelectorAll('.btn-view-map').forEach(function(btn) {
+    // Canvas 大图预览
+    document.querySelectorAll('.btn-view-canvas').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        const mapId = btn.dataset.mapId;
-        const img = document.getElementById('mapImg_' + mapId);
-        if (!img || img.style.display === 'none') {
-          U.toast('地图图片尚未添加');
-          return;
-        }
+        const canvasId = btn.dataset.canvas;
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) { U.toast('地图尚未渲染'); return; }
 
-        // 简易全屏预览
         let overlay = document.getElementById('mapOverlay');
         if (!overlay) {
           overlay = document.createElement('div');
           overlay.id = 'mapOverlay';
           overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-          overlay.addEventListener('click', function() {
-            overlay.style.display = 'none';
-          });
+          overlay.addEventListener('click', function() { overlay.style.display = 'none'; });
+          document.body.appendChild(overlay);
+        }
+
+        // 导出高清版
+        const img = new Image();
+        img.src = canvas.toDataURL('image/png');
+        img.style.cssText = 'max-width:95%;max-height:85%;object-fit:contain;';
+        img.onclick = function(e) { e.stopPropagation(); };
+        overlay.innerHTML = '';
+        overlay.appendChild(img);
+        const tip = document.createElement('p');
+        tip.style.cssText = 'color:#fff;margin-top:16px;font-size:14px;';
+        tip.textContent = '点击任意处关闭 | 长按图片可保存到相册';
+        overlay.appendChild(tip);
+        overlay.style.display = 'flex';
+      });
+    });
+
+    // 图片大图预览
+    document.querySelectorAll('.btn-view-img').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const imgId = btn.dataset.img;
+        const imgEl = document.getElementById(imgId);
+        if (!imgEl || imgEl.style.display === 'none') { U.toast('图片尚未加载'); return; }
+
+        let overlay = document.getElementById('mapOverlay');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = 'mapOverlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+          overlay.addEventListener('click', function() { overlay.style.display = 'none'; });
           document.body.appendChild(overlay);
         }
 
         overlay.innerHTML = `
-          <img src="${img.src}" style="max-width:95%;max-height:85%;object-fit:contain;" onclick="event.stopPropagation();">
+          <img src="${imgEl.src}" style="max-width:95%;max-height:85%;object-fit:contain;" onclick="event.stopPropagation();">
           <p style="color:#fff;margin-top:16px;font-size:14px;">点击任意处关闭 | 长按图片可保存</p>
         `;
         overlay.style.display = 'flex';
       });
     });
+
+    // 延迟绘制所有 Canvas 地图
+    setTimeout(function() {
+      drawOverviewMap();
+      drawDay03Map();
+      drawDay05Map();
+      drawKoraD1Map();
+      drawKoraD2Map();
+      drawKoraD3Map();
+      drawNorthLineMap();
+    }, 200);
   }
+
+  // ---- Canvas 绘图函数 ----
+
+  function drawOverviewMap() {
+    const canvas = document.getElementById('canvasOverview');
+    if (!canvas) return;
+    const ctx = setupHiDPICanvas(canvas, 750, 550);
+
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+
+    // 背景
+    drawMapBg(ctx, w, h);
+
+    // 16天路线节点（简化为地理坐标映射）
+    const nodes = [
+      { x: 0.65, y: 0.70, label: 'D1-2\n拉萨', alt: 3650, type: 'rest' },
+      { x: 0.58, y: 0.80, label: 'D3\n羊湖', alt: 4441, type: 'driving' },
+      { x: 0.52, y: 0.82, label: 'D3\n日喀则', alt: 3850, type: 'rest' },
+      { x: 0.42, y: 0.78, label: 'D4\n萨嘎', alt: 4500, type: 'rest' },
+      { x: 0.28, y: 0.72, label: 'D5\n玛旁雍错', alt: 4586, type: 'driving' },
+      { x: 0.25, y: 0.68, label: 'D5-9\n塔钦/转山', alt: 4660, type: 'trekking' },
+      { x: 0.20, y: 0.80, label: 'D10\n札达', alt: 3700, type: 'driving' },
+      { x: 0.15, y: 0.65, label: 'D11\n狮泉河', alt: 4280, type: 'rest' },
+      { x: 0.22, y: 0.50, label: 'D12\n改则', alt: 4430, type: 'driving' },
+      { x: 0.38, y: 0.45, label: 'D13\n措勤', alt: 4610, type: 'driving' },
+      { x: 0.52, y: 0.40, label: 'D14\n班戈', alt: 4720, type: 'driving' },
+      { x: 0.62, y: 0.55, label: 'D15\n纳木错', alt: 4718, type: 'driving' },
+      { x: 0.65, y: 0.70, label: 'D16\n返回拉萨', alt: 3650, type: 'rest' }
+    ];
+
+    // 连线
+    ctx.strokeStyle = '#e74c3c';
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.setLineDash([8, 4]);
+    ctx.beginPath();
+    nodes.forEach(function(n, i) {
+      const px = n.x * w, py = h - n.y * h;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    // 闭环
+    ctx.lineTo(nodes[0].x * w, h - nodes[0].y * h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 节点
+    nodes.forEach(function(n) {
+      const px = n.x * w, py = h - n.y * h;
+      const color = n.type === 'trekking' ? '#8b0000' : n.type === 'rest' ? '#27ae60' : '#3498db';
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(px, py, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#2c3e50';
+      ctx.font = 'bold 11px -apple-system,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(n.label, px, py - 14);
+    });
+
+    // 图例
+    drawMapLegend(ctx, w, h, [
+      { color: '#3498db', text: '驾车日' },
+      { color: '#27ae60', text: '休整日' },
+      { color: '#8b0000', text: '转山日' }
+    ]);
+
+    ctx.fillStyle = '#666';
+    ctx.font = '11px -apple-system,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('← 拉萨起终点 · 顺时针环线 · 总约4000km →', w - 20, h - 10);
+  }
+
+  function drawDay03Map() {
+    const canvas = document.getElementById('canvasD03');
+    if (!canvas) return;
+    const ctx = setupHiDPICanvas(canvas, 750, 350);
+
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+
+    drawMapBg(ctx, w, h);
+
+    const nodes = [
+      { x: 0.15, y: 0.40, label: '拉萨\n3650m', type: 'start' },
+      { x: 0.35, y: 0.55, label: '岗巴拉山口\n5039m', type: 'pass' },
+      { x: 0.48, y: 0.62, label: '羊卓雍措\n4441m', type: 'scenic' },
+      { x: 0.58, y: 0.68, label: '浪卡子', type: 'waypoint' },
+      { x: 0.68, y: 0.58, label: '卡若拉冰川', type: 'scenic' },
+      { x: 0.78, y: 0.50, label: '江孜\n宗山古堡', type: 'waypoint' },
+      { x: 0.90, y: 0.42, label: '日喀则\n3850m', type: 'end' }
+    ];
+
+    drawRouteLine(ctx, nodes, w, h);
+    drawRouteNodes(ctx, nodes, w, h);
+
+    ctx.fillStyle = '#666';
+    ctx.font = '11px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('拉萨 → 羊卓雍措 → 日喀则 · Day3 · 约360km · 7-8小时', w / 2, h - 10);
+  }
+
+  function drawDay05Map() {
+    const canvas = document.getElementById('canvasD05');
+    if (!canvas) return;
+    const ctx = setupHiDPICanvas(canvas, 750, 350);
+
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+
+    drawMapBg(ctx, w, h);
+
+    const nodes = [
+      { x: 0.10, y: 0.45, label: '日喀则\n3850m', type: 'start' },
+      { x: 0.22, y: 0.48, label: '拉孜\n5000km碑', type: 'waypoint' },
+      { x: 0.38, y: 0.40, label: '萨嘎\n4500m', type: 'waypoint' },
+      { x: 0.52, y: 0.38, label: '仲巴\n补给站', type: 'fuel' },
+      { x: 0.68, y: 0.42, label: '马攸木拉山口\n5211m', type: 'pass' },
+      { x: 0.80, y: 0.35, label: '玛旁雍错\n4586m', type: 'scenic' },
+      { x: 0.85, y: 0.42, label: '拉昂错(鬼湖)', type: 'scenic' },
+      { x: 0.92, y: 0.38, label: '塔钦\n4660m\n冈仁波齐', type: 'end' }
+    ];
+
+    drawRouteLine(ctx, nodes, w, h);
+    drawRouteNodes(ctx, nodes, w, h);
+
+    ctx.fillStyle = '#666';
+    ctx.font = '11px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('日喀则 → 萨嘎 → 玛旁雍错 → 塔钦 · Day4-5 · 约950km · 分2天', w / 2, h - 10);
+  }
+
+  function drawKoraD1Map() {
+    const canvas = document.getElementById('canvasD07');
+    if (!canvas) return;
+    const ctx = setupHiDPICanvas(canvas, 750, 400);
+
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+
+    drawMapBg(ctx, w, h);
+
+    // 绘制海拔剖面示意图
+    const profile = [
+      { x: 0.10, alt: 4660, label: '塔钦\n4660m' },
+      { x: 0.25, alt: 4750, label: '经幡广场\n4750m' },
+      { x: 0.45, alt: 4820, label: '曲古寺\n4820m' },
+      { x: 0.65, alt: 4950, label: '补给点' },
+      { x: 0.85, alt: 5000, label: '止热寺\n5000m' },
+      { x: 0.95, alt: 5080, label: '远眺\n5080m' }
+    ];
+
+    drawAltProfile(ctx, profile, w, h, '塔钦 → 经幡广场 → 曲古寺 → 止热寺 · 转山D1 · 约20km · 6-8小时');
+
+    // 标注
+    ctx.fillStyle = '#c0392b';
+    ctx.font = 'bold 13px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⛺ 住宿海拔 5000m — 注意保暖和高反', w / 2, 30);
+  }
+
+  function drawKoraD2Map() {
+    const canvas = document.getElementById('canvasD08');
+    if (!canvas) return;
+    const ctx = setupHiDPICanvas(canvas, 750, 400);
+
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+
+    // 红色背景警告
+    ctx.fillStyle = '#fff8f8';
+    ctx.fillRect(0, 0, w, h);
+
+    const profile = [
+      { x: 0.08, alt: 5000, label: '止热寺\n5000m' },
+      { x: 0.20, alt: 5180, label: '沿途\n上升' },
+      { x: 0.35, alt: 5350, label: '天葬台\n5350m' },
+      { x: 0.55, alt: 5630, label: '⚠️卓玛拉山口\n5630m' },
+      { x: 0.68, alt: 5400, label: '慈悲湖\n5400m' },
+      { x: 0.78, alt: 5100, label: '托吉错' },
+      { x: 0.90, alt: 4800, label: '祖楚寺\n4800m' }
+    ];
+
+    drawAltProfile(ctx, profile, w, h, '止热寺 → 天葬台 → 卓玛拉山口(5630m) → 祖楚寺 · 转山D2 · 约22km · 8-10小时');
+
+    // 警告条
+    ctx.fillStyle = '#8b0000';
+    ctx.fillRect(10, 10, w - 20, 30);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠️ 全程最难的一天！卓玛拉山口不要长时间停留！', w / 2, 31);
+  }
+
+  function drawKoraD3Map() {
+    const canvas = document.getElementById('canvasD09');
+    if (!canvas) return;
+    const ctx = setupHiDPICanvas(canvas, 750, 350);
+
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+
+    drawMapBg(ctx, w, h);
+
+    const profile = [
+      { x: 0.10, alt: 4800, label: '祖楚寺\n4800m' },
+      { x: 0.35, alt: 4720, label: '沿途\n缓下坡' },
+      { x: 0.60, alt: 4680, label: '宗堆\n4680m' },
+      { x: 0.85, alt: 4660, label: '塔钦\n4660m\n✅完成' }
+    ];
+
+    drawAltProfile(ctx, profile, w, h, '祖楚寺 → 宗堆 → 塔钦 · 转山D3 · 约10km · 3-4小时 · 相对轻松');
+
+    ctx.fillStyle = '#27ae60';
+    ctx.font = 'bold 14px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✅ 转山完成！回塔钦休整，检查膝盖和脚趾', w / 2, 30);
+  }
+
+  function drawNorthLineMap() {
+    const canvas = document.getElementById('canvasD10');
+    if (!canvas) return;
+    const ctx = setupHiDPICanvas(canvas, 750, 400);
+
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+
+    drawMapBg(ctx, w, h);
+
+    const nodes = [
+      { x: 0.08, y: 0.60, label: 'D10 札达\n3700m', type: 'start' },
+      { x: 0.12, y: 0.45, label: 'D11 狮泉河\n4280m', type: 'rest' },
+      { x: 0.22, y: 0.38, label: '革吉', type: 'waypoint' },
+      { x: 0.38, y: 0.35, label: 'D12 改则\n4430m', type: 'rest' },
+      { x: 0.52, y: 0.40, label: 'D13 措勤\n4610m', type: 'rest' },
+      { x: 0.62, y: 0.32, label: '尼玛', type: 'waypoint' },
+      { x: 0.72, y: 0.35, label: '色林错', type: 'scenic' },
+      { x: 0.82, y: 0.38, label: 'D14 班戈\n4720m', type: 'rest' },
+      { x: 0.88, y: 0.48, label: '纳木错', type: 'scenic' },
+      { x: 0.92, y: 0.55, label: '那根拉山口\n5190m', type: 'pass' },
+      { x: 0.95, y: 0.62, label: 'D15 拉萨\n3650m', type: 'end' }
+    ];
+
+    drawRouteLine(ctx, nodes, w, h);
+    drawRouteNodes(ctx, nodes, w, h);
+
+    ctx.fillStyle = '#666';
+    ctx.font = '11px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('札达 → 狮泉河 → 改则 → 措勤 → 班戈 → 拉萨 · Day10-15 · 阿里北线 · 约1800km', w / 2, h - 10);
+
+    // 北线警告
+    ctx.fillStyle = '#f39c12';
+    ctx.fillRect(w / 2 - 180, 15, 360, 28);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px -apple-system,sans-serif';
+    ctx.fillText('⚠️ 北线路段：补给少、信号弱、风大、野生动物多', w / 2, 34);
+  }
+
+  // ---- 地图绘制辅助函数 ----
+
+  function setupHiDPICanvas(canvas, w, h) {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return ctx;
+  }
+
+  function drawMapBg(ctx, w, h) {
+    ctx.fillStyle = '#fafbfc';
+    ctx.fillRect(0, 0, w, h);
+    // 淡色网格
+    ctx.strokeStyle = '#e8e8e8';
+    ctx.lineWidth = 0.5;
+    for (let x = 20; x < w; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = 20; y < h; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+  }
+
+  function drawMapLegend(ctx, w, h, items) {
+    let x = 15, y = h - 25;
+    items.forEach(function(item) {
+      ctx.fillStyle = item.color;
+      ctx.beginPath();
+      ctx.arc(x + 4, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#555';
+      ctx.font = '11px -apple-system,sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(item.text, x + 14, y + 4);
+      x += ctx.measureText(item.text).width + 30;
+    });
+  }
+
+  function drawRouteLine(ctx, nodes, w, h) {
+    ctx.strokeStyle = '#e74c3c';
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.setLineDash([6, 3]);
+    ctx.beginPath();
+    nodes.forEach(function(n, i) {
+      const px = n.x * w, py = h - n.y * h;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawRouteNodes(ctx, nodes, w, h) {
+    nodes.forEach(function(n) {
+      const px = n.x * w, py = h - n.y * h;
+      let color;
+      switch (n.type) {
+        case 'start': case 'end': color = '#27ae60'; break;
+        case 'pass': color = '#e74c3c'; break;
+        case 'scenic': color = '#f39c12'; break;
+        case 'fuel': color = '#e67e22'; break;
+        case 'rest': color = '#3498db'; break;
+        default: color = '#95a5a6';
+      }
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#2c3e50';
+      ctx.font = 'bold 10px -apple-system,sans-serif';
+      ctx.textAlign = 'center';
+      const lines = n.label.split('\n');
+      lines.forEach(function(line, i) {
+        ctx.fillText(line, px, py - 10 - (lines.length - 1 - i) * 13);
+      });
+    });
+  }
+
+  function drawAltProfile(ctx, profile, w, h, subtitle) {
+    const minAlt = Math.min.apply(null, profile.map(function(p) { return p.alt; })) - 100;
+    const maxAlt = Math.max.apply(null, profile.map(function(p) { return p.alt; })) + 100;
+    const range = maxAlt - minAlt;
+    const pad = { top: 50, right: 30, bottom: 60, left: 40 };
+
+    const toY = function(alt) {
+      return pad.top + (h - pad.top - pad.bottom) * (1 - (alt - minAlt) / range);
+    };
+    const toX = function(x) {
+      return pad.left + x * (w - pad.left - pad.right);
+    };
+
+    // 海拔标尺
+    ctx.fillStyle = '#999';
+    ctx.font = '10px -apple-system,sans-serif';
+    ctx.textAlign = 'right';
+    for (let a = Math.ceil(minAlt / 100) * 100; a <= maxAlt; a += 200) {
+      const y = toY(a);
+      ctx.fillText(a + 'm', pad.left - 5, y + 3);
+      ctx.strokeStyle = '#eee';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(w - pad.right, y);
+      ctx.stroke();
+    }
+
+    // 5000m 红线
+    ctx.strokeStyle = '#e74c3c';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, toY(5000));
+    ctx.lineTo(w - pad.right, toY(5000));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillText('5000m', pad.left - 5, toY(5000) + 3);
+
+    // 海拔曲线
+    ctx.strokeStyle = '#e74c3c';
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    profile.forEach(function(p, i) {
+      const x = toX(p.x);
+      const y = toY(p.alt);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // 填充区域
+    ctx.lineTo(toX(profile[profile.length - 1].x), h - pad.bottom);
+    ctx.lineTo(toX(profile[0].x), h - pad.bottom);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(231,76,60,0.1)';
+    ctx.fill();
+
+    // 节点和标签
+    profile.forEach(function(p, i) {
+      const x = toX(p.x);
+      const y = toY(p.alt);
+      const isHighest = p.alt === Math.max.apply(null, profile.map(function(q) { return q.alt; }));
+
+      ctx.fillStyle = isHighest ? '#8b0000' : '#e74c3c';
+      ctx.beginPath();
+      ctx.arc(x, y, isHighest ? 6 : 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#2c3e50';
+      ctx.font = (isHighest ? 'bold ' : '') + '10px -apple-system,sans-serif';
+      ctx.textAlign = 'center';
+      const lines = p.label.split('\n');
+      lines.forEach(function(line, j) {
+        ctx.fillText(line, x, y - 8 - (lines.length - 1 - j) * 12);
+      });
+
+      // 距离标注
+      if (i > 0) {
+        const prevX = toX(profile[i - 1].x);
+        ctx.fillStyle = '#888';
+        ctx.font = '9px -apple-system,sans-serif';
+        ctx.fillText('→', (x + prevX) / 2, h - pad.bottom + 14);
+      }
+    });
+
+    // 副标题
+    ctx.fillStyle = '#666';
+    ctx.font = '11px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(subtitle, w / 2, h - 8);
+  }
+
 
   // ========================================
   // 8. 应急模块
