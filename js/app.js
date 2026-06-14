@@ -1499,8 +1499,14 @@
       });
     });
 
-    // 延迟绘制所有 Canvas 地图
-    setTimeout(function() {
+    // 延迟绘制所有 Canvas 地图（确保 DOM 已渲染）
+    // 用多次重试确保 Canvas 元素已存在于 DOM
+    function drawAllMaps(retries) {
+      retries = retries || 0;
+      if (!document.getElementById('canvasOverview') && retries < 10) {
+        setTimeout(function() { drawAllMaps(retries + 1); }, 50);
+        return;
+      }
       drawOverviewMap();
       drawDay03Map();
       drawDay05Map();
@@ -1508,7 +1514,8 @@
       drawKoraD2Map();
       drawKoraD3Map();
       drawNorthLineMap();
-    }, 200);
+    }
+    setTimeout(drawAllMaps, 100);
   }
 
   // ---- Canvas 绘图函数 ----
