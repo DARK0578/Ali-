@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=2.0,user-scalable=yes,viewport-fit=cover">
+  <meta name="theme-color" content="#1a3a4a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="阿里环线路书">
+  <meta name="description" content="阿里大环线离线路书助手 — 16天行程·冈仁波齐转山·装备检查·海拔风险·应急助手">
+
+  <title>🏔️ 阿里大环线路书</title>
+
+  <!-- 数据（必须最先加载，后续脚本依赖） -->
+  <script src="data/trip-data.js"></script>
+
+  <!-- 工具函数 -->
+  <script src="js/utils.js"></script>
+
+  <!-- 主样式 -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- PWA Manifest（预留） -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- 离线图标（预留） -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>">
+
+  <script>
+    // =========================================
+    // Service Worker 注册（P1 预留）
+    // 在第一阶段，即使 SW 不可用，核心功能仍正常工作
+    // =========================================
+    if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+      // 延迟注册，不阻塞首屏
+      window.addEventListener('load', function() {
+        // navigator.serviceWorker.register('service-worker.js').catch(function() {});
+      });
+    }
+  </script>
+</head>
+<body>
+
+  <!-- 应用根节点 -->
+  <div id="app">
+    <!-- 初始加载状态 -->
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px;">
+      <span style="font-size:48px;">🏔️</span>
+      <p style="color:#2c3e50;font-weight:600;">阿里大环线 · 路书加载中...</p>
+      <p style="font-size:12px;color:#999;">离线优先 · 微信可用</p>
+    </div>
+  </div>
+
+  <!-- 主应用逻辑（在 DOM 和数据加载完成后执行） -->
+  <script src="js/app.js"></script>
+
+  <!--
+    ═══════════════════════════════════════════
+    阿里大环线离线路书助手 v3.0
+    离线优先 · 移动端 H5 · 微信兼容
+    数据本地化 · 无服务器依赖
+    ═══════════════════════════════════════════
+  -->
+
+</body>
+</html>
