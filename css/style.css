@@ -252,6 +252,7 @@ body {
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 14px;
+  text-shadow: 0 0 2px rgba(0,0,0,0.3);
 }
 
 .type-badge {
